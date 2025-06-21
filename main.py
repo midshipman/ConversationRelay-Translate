@@ -25,12 +25,12 @@ class TranslationSession:
         self.source_phone_number = None  # Incoming caller's phone
         self.target_phone_number = None  # Outbound caller's phone
         self.source_language = "en-US"  # Default source language
-        self.target_language = "de-DE"  # Default target language
+        self.target_language = "zh-CN"  # Default target language
 
 # Session storage
 translation_sessions: Dict[str, TranslationSession] = {}
 
-async def translate_text_streaming(text: str, source_lang: str = "English", target_lang: str = "German"):
+async def translate_text_streaming(text: str, source_lang: str = "en-US", target_lang: str = "de-DE"):
     """Streaming translation function using OpenAI"""
     messages = [
         {"role": "system", "content": f"You are a professional real-time translator. Translate the following {source_lang} text to {target_lang}. Provide only the translation, no explanations or additional text."},
@@ -87,8 +87,8 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                 # Get session for language configuration
                 if session_id in translation_sessions:
                     session = translation_sessions[session_id]
-                    source_lang = session.source_language.split('-')[0].title()  # "en-US" -> "English"
-                    target_lang = session.target_language.split('-')[0].title()  # "de-DE" -> "German"
+                    source_lang = session.source_language
+                    target_lang = session.target_language
                     
                     # Translate using streaming
                     translated_text = ""
@@ -127,7 +127,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
 
             if message["type"] == "setup":
                 call_sid = message["callSid"]
-                print(f"Target setup initiated for call SID: {call_sid}")
+                print(f"Target ws setup initiated for call SID: {call_sid}")
                 
                 # Update session with target WebSocket
                 if session_id in translation_sessions:
@@ -136,11 +136,23 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                     session.target_websocket = websocket
 
             elif message["type"] == "prompt":
-                # For Phase 1, target caller only receives translations
-                # In Phase 2, we would translate target back to source
+                # Phase 2: Translate target back to source
                 prompt = message["voicePrompt"]
-                print(f"Target prompt (Phase 1 - receive only): {prompt}")
-
+                print(f"Target prompt: {prompt}")
+                
+                if session_id in translation_sessions:
+                    session = translation_sessions[session_id]
+                    target_lang = session.target_language
+                    source_lang = session.source_language
+                    
+                    # Translate target → source
+                    translated_text = ""
+                    async for event in translate_text_streaming(prompt, target_lang, source_lang):
+                        await session.source_websocket.send_json(event)
+                        translated_text += event["token"]
+                    
+                    print(f"Translated from {target_lang} to {source_lang}: {translated_text}")
+                    
             elif message["type"] == "interrupt":
                 print("Target response interrupted")
 
@@ -176,12 +188,11 @@ async def voice_webhook(request: Request):
     session_id = f"session_{call_sid}"
     
     # Create translation session immediately with all phone number info
-    target_language = "de-DE"  # Could be passed as query param or config
     session = TranslationSession(session_id, call_sid)
     session.source_phone_number = from_number
     session.target_phone_number = target_number  # Initialize target number here
-    session.source_language = "en-US"
-    session.target_language = target_language
+    session.source_language = os.getenv("SOURCE_LANGUAGE", "en-US")
+    session.target_language = os.getenv("TARGET_LANGUAGE", "de-DE")
     translation_sessions[session_id] = session
     
     print(f"Created translation session: {session_id}")
@@ -198,7 +209,7 @@ async def voice_webhook(request: Request):
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay url="{ws_url}" language="en-US" />
+                    <ConversationRelay url="{ws_url}" language="{session.source_language}" />
                 </Connect>
             </Response>'''
     
@@ -248,7 +259,6 @@ async def target_voice_webhook(request: Request, session_id: str):
     print(f"Target WebSocket URL: {ws_url}")
     
     # Get target language from session or default to German
-    target_language = "de-DE"
     if session_id in translation_sessions:
         target_language = translation_sessions[session_id].target_language
     
