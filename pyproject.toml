@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.115.13",
     "openai>=1.90.0",
     "python-multipart>=0.0.20",
+    "twilio>=9.6.3",
     "uvicorn>=0.34.3",
     "websockets>=15.0.1",
 ]
