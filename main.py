@@ -58,6 +58,33 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
         "last": True,
     }
 
+async def create_outbound_target_call(session_id: str, host: str, target_number: str, twilio_number: str):
+    """Create outbound call to target language speaker"""
+    try:
+        # Get existing session and update it
+        if session_id not in translation_sessions:
+            print(f"Session {session_id} not found!")
+            return
+            
+        session = translation_sessions[session_id]
+        
+        # Use the host passed from the incoming request
+        webhook_url = f"https://{host}/voice/target/{session_id}"
+        print(f"Webhook URL for target caller: {webhook_url}")
+        call = twilio_client.calls.create(
+            to=target_number,
+            from_=twilio_number,
+            url=webhook_url,
+            method="POST"
+        )
+        
+        # Update session with target call info
+        session.target_call_sid = call.sid
+        print(f"Created outbound call to target number: {call.sid}")
+        
+    except Exception as e:
+        print(f"Error creating outbound call: {e}")
+
 @app.websocket("/ws/source/{session_id}")
 async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for source language callers"""
@@ -215,32 +242,6 @@ async def voice_webhook(request: Request):
     
     return Response(content=twiml, media_type="text/xml")
 
-async def create_outbound_target_call(session_id: str, host: str, target_number: str, twilio_number: str):
-    """Create outbound call to target language speaker"""
-    try:
-        # Get existing session and update it
-        if session_id not in translation_sessions:
-            print(f"Session {session_id} not found!")
-            return
-            
-        session = translation_sessions[session_id]
-        
-        # Use the host passed from the incoming request
-        webhook_url = f"https://{host}/voice/target/{session_id}"
-        print(f"Webhook URL for target caller: {webhook_url}")
-        call = twilio_client.calls.create(
-            to=target_number,
-            from_=twilio_number,
-            url=webhook_url,
-            method="POST"
-        )
-        
-        # Update session with target call info
-        session.target_call_sid = call.sid
-        print(f"Created outbound call to target number: {call.sid}")
-        
-    except Exception as e:
-        print(f"Error creating outbound call: {e}")
 
 @app.post("/voice/target/{session_id}")
 async def target_voice_webhook(request: Request, session_id: str):
