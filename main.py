@@ -1,6 +1,7 @@
-import json
 import os
+import json
 import uvicorn
+import logging
 from typing import Dict, List, Optional
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import Response
@@ -9,6 +10,13 @@ from dotenv import load_dotenv
 from twilio.rest import Client
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 import time
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 load_dotenv()
 app = FastAPI()
@@ -45,7 +53,7 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
     ]
     
     stream = await openai_client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1",
         messages=messages,
         stream=True,
         temperature=0.3,  # Lower temperature for more consistent translations
@@ -70,54 +78,56 @@ async def create_outbound_target_call(session_id: str, host: str, target_number:
     try:
         # Get existing session and update it
         if session_id not in translation_sessions:
-            print(f"Session {session_id} not found!")
+            logging.error(f"Session {session_id} not found!")
             return
             
         session = translation_sessions[session_id]
         
         # Use the host passed from the incoming request
         webhook_url = f"https://{host}/voice/target/{session_id}"
-        print(f"Webhook URL for target caller: {webhook_url}")
+        logging.debug(f"Webhook URL for target caller: {webhook_url}")
         call = twilio_client.calls.create(
             to=target_number,
             from_=twilio_number,
             url=webhook_url,
-            method="POST"
+            method="POST",
+            record=True
         )
         
         # Update session with target call info
         session.target_call_sid = call.sid
-        print(f"Created outbound call to target number: {call.sid}")
+        logging.info(f"Created outbound call to target number: {call.sid}")
         
     except Exception as e:
-        print(f"Error creating outbound call: {e}")
+        logging.error(f"Error creating outbound call: {e}")
 
 async def create_outbound_source_call(session_id: str, host: str, source_number: str, twilio_number: str):
     """Create outbound call to source language speaker"""
     try:
         # Get existing session and update it
         if session_id not in translation_sessions:
-            print(f"Session {session_id} not found!")
+            logging.error(f"Session {session_id} not found!")
             return
             
         session = translation_sessions[session_id]
         
         # Use the host passed from the incoming request
         webhook_url = f"https://{host}/voice/source/{session_id}"
-        print(f"Webhook URL for source caller: {webhook_url}")
+        logging.debug(f"Webhook URL for source caller: {webhook_url}")
         call = twilio_client.calls.create(
             to=source_number,
             from_=twilio_number,
             url=webhook_url,
-            method="POST"
+            method="POST",
+            record=True
         )
         
         # Update session with source call info
         session.source_call_sid = call.sid
-        print(f"Created outbound call to source number: {call.sid}")
+        logging.info(f"Created outbound call to source number: {call.sid}")
         
     except Exception as e:
-        print(f"Error creating outbound source call: {e}")
+        logging.error(f"Error creating outbound source call: {e}")
 
 @app.websocket("/ws/source/{session_id}")
 async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
@@ -129,11 +139,11 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            print(f"Source WebSocket Message: {message}")
+            logging.debug(f"Source WebSocket Message: {message}")
 
             if message["type"] == "setup":
                 call_sid = message["callSid"]
-                print(f"Source setup initiated for call SID: {call_sid}")
+                logging.info(f"Source setup initiated for call SID: {call_sid}")
                 
                 # Update session with source WebSocket
                 if session_id in translation_sessions:
@@ -143,7 +153,7 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
 
             elif message["type"] == "prompt":
                 prompt = message["voicePrompt"]
-                print(f"Source prompt: {prompt}")
+                logging.info(f"Source prompt: {prompt}")
                 
                 # Get session for language configuration
                 if session_id in translation_sessions:
@@ -157,22 +167,22 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                         await session.target_websocket.send_json(event)
                         translated_text += event["token"]
                     
-                    print(f"Translated from {source_lang} to {target_lang}: {translated_text}")
+                    logging.info(f"Translated from {source_lang} to {target_lang}: {translated_text}")
                     
                    
 
             elif message["type"] == "interrupt":
-                print("Source response interrupted")
+                logging.warning("Source response interrupted")
 
             elif message["type"] == "error":
-                print("Source WebSocket error")
+                logging.error("Source WebSocket error")
 
     except Exception as e:
-        print(f"Source WebSocket error: {e}")
+        logging.error(f"Source WebSocket error: {e}")
     finally:
         if session_id in translation_sessions:
             translation_sessions.pop(session_id, None)
-        print("Source client disconnected.")
+        logging.info("Source client disconnected.")
 
 @app.websocket("/ws/target/{session_id}")
 async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
@@ -184,11 +194,11 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            print(f"Target WebSocket Message: {message}")
+            logging.debug(f"Target WebSocket Message: {message}")
 
             if message["type"] == "setup":
                 call_sid = message["callSid"]
-                print(f"Target ws setup initiated for call SID: {call_sid}")
+                logging.info(f"Target ws setup initiated for call SID: {call_sid}")
                 
                 # Update session with target WebSocket
                 if session_id in translation_sessions:
@@ -199,7 +209,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
             elif message["type"] == "prompt":
                 # Phase 2: Translate target back to source
                 prompt = message["voicePrompt"]
-                print(f"Target prompt: {prompt}")
+                logging.info(f"Target prompt: {prompt}")
                 
                 if session_id in translation_sessions:
                     session = translation_sessions[session_id]
@@ -212,18 +222,18 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                         await session.source_websocket.send_json(event)
                         translated_text += event["token"]
                     
-                    print(f"Translated from {target_lang} to {source_lang}: {translated_text}")
+                    logging.info(f"Translated from {target_lang} to {source_lang}: {translated_text}")
                     
             elif message["type"] == "interrupt":
-                print("Target response interrupted")
+                logging.warning("Target response interrupted")
 
             elif message["type"] == "error":
-                print("Target WebSocket error")
+                logging.error("Target WebSocket error")
 
     except Exception as e:
-        print(f"Target WebSocket error: {e}")
+        logging.error(f"Target WebSocket error: {e}")
     finally:
-        print("Target client disconnected.")
+        logging.info("Target client disconnected.")
 
 
 @app.post("/voice/target/{session_id}")
@@ -235,12 +245,12 @@ async def target_voice_webhook(request: Request, session_id: str):
     to_number = form_data.get("To")
     call_status = form_data.get("CallStatus")
     
-    print(f"Outbound target call from {from_number} to {to_number} with SID: {call_sid}, Status: {call_status}")
+    logging.info(f"Outbound target call from {from_number} to {to_number} with SID: {call_sid}, Status: {call_status}")
     
     # Get the host from request headers
     host = request.headers.get('host')
     ws_url = f"wss://{host}/ws/target/{session_id}"
-    print(f"Target WebSocket URL: {ws_url}")
+    logging.debug(f"Target WebSocket URL: {ws_url}")
     
     # Get target language and TTS settings from session or defaults
     target_language = ""  
@@ -272,12 +282,12 @@ async def source_voice_webhook(request: Request, session_id: str):
     to_number = form_data.get("To")
     call_status = form_data.get("CallStatus")
     
-    print(f"Outbound source call from {from_number} to {to_number} with SID: {call_sid}, Status: {call_status}")
+    logging.info(f"Outbound source call from {from_number} to {to_number} with SID: {call_sid}, Status: {call_status}")
     
     # Get the host from request headers
     host = request.headers.get('host')
     ws_url = f"wss://{host}/ws/source/{session_id}"
-    print(f"Source WebSocket URL: {ws_url}")
+    logging.debug(f"Source WebSocket URL: {ws_url}")
     
     # Get source language and TTS settings from session or defaults
     source_language = ""  # default
@@ -350,9 +360,9 @@ async def initiate_call(request: Request):
         session.host = request.headers.get('host')
         translation_sessions[session_id] = session
         
-        print(f"Created manual translation session: {session_id}")
-        print(f"From: {from_number} ({source_language}) -> To: {to_number} ({target_language})")
-        print(f"Source TTS: {source_tts_provider}/{source_voice}, Target TTS: {target_tts_provider}/{target_voice}")
+        logging.info(f"Created manual translation session: {session_id}")
+        logging.info(f"From: {from_number} ({source_language}) -> To: {to_number} ({target_language})")
+        logging.info(f"Source TTS: {source_tts_provider}/{source_voice}, Target TTS: {target_tts_provider}/{target_voice}")
         
         # Create outbound calls to both parties
         await create_outbound_source_call(session_id, session.host, from_number, twilio_number)
@@ -364,7 +374,7 @@ async def initiate_call(request: Request):
 
         
     except Exception as e:
-        print(f"Error initiating call: {e}")
+        logging.error(f"Error initiating call: {e}")
         return HTMLResponse(
             content=f"<h1>Error: {str(e)}</h1><a href='/'>Go back</a>",
             status_code=500
