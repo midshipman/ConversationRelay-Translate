@@ -7,7 +7,7 @@ from fastapi.responses import Response
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from twilio.rest import Client
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 import time
 
 load_dotenv()
@@ -26,8 +26,13 @@ class TranslationSession:
         self.target_websocket: Optional[WebSocket] = None  # Outbound caller's WebSocket
         self.source_phone_number = None  # Incoming caller's phone
         self.target_phone_number = None  # Outbound caller's phone
-        self.source_language = "en-US"  # Default source language
-        self.target_language = "zh-CN"  # Default target language
+        self.source_language = ""  # Default source language
+        self.target_language = ""  # Default target language
+        self.source_tts_provider = "ElevenLabs"  # Default source TTS provider
+        self.source_voice = ""  # Default source voice
+        self.target_tts_provider = "ElevenLabs"  # Default target TTS provider
+        self.target_voice = ""  # Default target voice
+        self.host = None  # Request host for WebSocket URLs
 
 # Session storage
 translation_sessions: Dict[str, TranslationSession] = {}
@@ -237,15 +242,22 @@ async def target_voice_webhook(request: Request, session_id: str):
     ws_url = f"wss://{host}/ws/target/{session_id}"
     print(f"Target WebSocket URL: {ws_url}")
     
-    # Get target language from session or default to German
+    # Get target language and TTS settings from session or defaults
+    target_language = ""  
+    target_tts_provider = ""  
+    target_voice = ""  
     if session_id in translation_sessions:
-        target_language = translation_sessions[session_id].target_language
+        session = translation_sessions[session_id]
+        target_language = session.target_language
+        target_tts_provider = session.target_tts_provider
+        target_voice = session.target_voice
     
-    # TwiML response for ConversationRelay with target language settings
+    # TwiML response for ConversationRelay with target language and TTS settings
+    voice_attr = f' voice="{target_voice}"' if target_voice else ''
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay url="{ws_url}" language="{target_language}" />
+                    <ConversationRelay url="{ws_url}" language="{target_language}" ttsProvider="{target_tts_provider}"{voice_attr} />
                 </Connect>
             </Response>'''
     
@@ -267,16 +279,22 @@ async def source_voice_webhook(request: Request, session_id: str):
     ws_url = f"wss://{host}/ws/source/{session_id}"
     print(f"Source WebSocket URL: {ws_url}")
     
-    # Get source language from session or default to English
-    source_language = "en-US"  # default
+    # Get source language and TTS settings from session or defaults
+    source_language = ""  # default
+    source_tts_provider = ""  # default
+    source_voice = ""  # default
     if session_id in translation_sessions:
-        source_language = translation_sessions[session_id].source_language
+        session = translation_sessions[session_id]
+        source_language = session.source_language
+        source_tts_provider = session.source_tts_provider
+        source_voice = session.source_voice
     
-    # TwiML response for ConversationRelay with source language settings
+    # TwiML response for ConversationRelay with source language and TTS settings
+    voice_attr = f' voice="{source_voice}"' if source_voice else ''
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay url="{ws_url}" language="{source_language}" />
+                    <ConversationRelay url="{ws_url}" language="{source_language}" ttsProvider="{source_tts_provider}"{voice_attr} />
                 </Connect>
             </Response>'''
     
@@ -295,6 +313,10 @@ async def initiate_call(request: Request):
     to_number = form_data.get("to_number")
     source_language = form_data.get("source_language")
     target_language = form_data.get("target_language")
+    source_tts_provider = form_data.get("source_tts_provider", "ElevenLabs")
+    source_voice = form_data.get("source_voice", "UgBBYS2sOqTuMpoF3BR0")
+    target_tts_provider = form_data.get("target_tts_provider", "ElevenLabs")
+    target_voice = form_data.get("target_voice", "UgBBYS2sOqTuMpoF3BR0")
     
     # Validate required fields
     if not all([from_number, to_number, source_language, target_language]):
@@ -321,42 +343,25 @@ async def initiate_call(request: Request):
         session.target_phone_number = to_number
         session.source_language = source_language
         session.target_language = target_language
+        session.source_tts_provider = source_tts_provider
+        session.source_voice = source_voice
+        session.target_tts_provider = target_tts_provider
+        session.target_voice = target_voice
         session.host = request.headers.get('host')
         translation_sessions[session_id] = session
         
         print(f"Created manual translation session: {session_id}")
         print(f"From: {from_number} ({source_language}) -> To: {to_number} ({target_language})")
+        print(f"Source TTS: {source_tts_provider}/{source_voice}, Target TTS: {target_tts_provider}/{target_voice}")
         
         # Create outbound calls to both parties
         await create_outbound_source_call(session_id, session.host, from_number, twilio_number)
         await create_outbound_target_call(session_id, session.host, to_number, twilio_number)
         
-        # Append log entry to start.html
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Read current start.html content
-        with open("/Users/hwang/Desktop/Dev/voxray-translate/start.html", "r") as f:
-            html_content = f.read()
-        
-        # Create log entry as simple list item
-        log_entry = f"<li>{timestamp} - {from_number} ({source_language}) → {to_number} ({target_language})</li>\n"
-        
-        # Insert log entry into the call list
-        call_list_pos = html_content.find('<ul id="call-list">')
-        if call_list_pos != -1:
-            # Find the position after the opening <ul> tag
-            insert_pos = html_content.find('>', call_list_pos) + 1
-            # Insert the new log entry at the beginning of the list
-            html_content = html_content[:insert_pos] + '\n' + log_entry + html_content[insert_pos:]
-        
-        # Write updated content back to start.html
-        with open("/Users/hwang/Desktop/Dev/voxray-translate/start.html", "w") as f:
-            f.write(html_content)
-        
         # Redirect back to the form page
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/", status_code=302)
+        
+        return RedirectResponse(url="/", status_code=303)
+
         
     except Exception as e:
         print(f"Error initiating call: {e}")
@@ -367,3 +372,4 @@ async def initiate_call(request: Request):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
+    

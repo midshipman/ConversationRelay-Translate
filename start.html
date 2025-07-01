@@ -67,71 +67,124 @@
         <div class="note">
             <strong>Note:</strong> Enter phone numbers in international format (e.g., +1234567890)
         </div>
-        <div id="call-logs"><h3>Recent Calls</h3>
-        <div class="log-entry" style="background-color: #e8f5e8; border: 1px solid #4caf50; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 14px;">
-            <strong>Call Initiated:</strong> 2025-06-30 18:57:01<br>
-            <strong>Session ID:</strong> session_1751302621_4917673552924_18339961848<br>
-            <strong>From:</strong> +4917673552924 (en-US) → <strong>To:</strong> +18339961848 (de-DE)<br>
-            <em>Status: Calling both parties...</em>
-        
-        <div class="log-entry" style="background-color: #e8f5e8; border: 1px solid #4caf50; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 14px;">
-            <strong>Call Initiated:</strong> 2025-07-01 08:42:34<br>
-            <strong>Session ID:</strong> session_1751352153_4917673552924_18339961848<br>
-            <strong>From:</strong> +4917673552924 (en-US) → <strong>To:</strong> +18339961848 (de-DE)<br>
-            <em>Status: Calling both parties...</em>
-        
-        <div class="log-entry" style="background-color: #e8f5e8; border: 1px solid #4caf50; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 14px;">
-            <strong>Call Initiated:</strong> 2025-07-01 08:44:43<br>
-            <strong>Session ID:</strong> session_1751352282_4917673552924_18339961848<br>
-            <strong>From:</strong> +4917673552924 (en-US) → <strong>To:</strong> +18339961848 (de-DE)<br>
-            <em>Status: Calling both parties...</em>
-        </div>
-        </div>
-        </div>
 
-                <li>2025-07-01 09:24:52 - +4917673552924 (en-US) → +18339961848 (de-DE) - 呼叫中...</li>
-
-            </ul>
-        </div>
         <form action="/initiate-call" method="post">
-            <div class="form-group">
-                <label for="from_number">From Number (Source):</label>
-                <input type="tel" id="from_number" name="from_number" placeholder="+1234567890" required>
-            </div>
+            <fieldset style="border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                <legend style="font-weight: bold; padding: 0 10px;">Source Settings</legend>
+                
+                <div class="form-group">
+                    <label for="from_number">From Number (Source):</label>
+                    <input type="tel" id="from_number" name="from_number" placeholder="+1234567890" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="source_language">Source Language:</label>
+                    <select id="source_language" name="source_language" required>
+                        <option value="en-US">English (US)</option>
+                        <option value="de-DE">German</option>
+                        <option value="zh-CN">Chinese (Mandarin)</option>
+                        <option value="es-ES">Spanish</option>
+                        <option value="fr-FR">French</option>
+                        <option value="ja-JP">Japanese</option>
+                        <option value="ko-KR">Korean</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="source_tts_provider">TTS Provider:</label>
+                    <select id="source_tts_provider" name="source_tts_provider" required>
+                        <option value="ElevenLabs">ElevenLabs</option>
+                        <option value="Google">Google</option>
+                        <option value="Amazon">Amazon</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="source_voice">Voice (optional):</label>
+                    <input type="text" id="source_voice" name="source_voice" placeholder="Enter voice ID (leave empty for default)">
+                </div>
+            </fieldset>
             
-            <div class="form-group">
-                <label for="to_number">To Number (Target):</label>
-                <input type="tel" id="to_number" name="to_number" placeholder="+0987654321" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="source_language">Source Language:</label>
-                <select id="source_language" name="source_language" required>
-                    <option value="en-US">English (US)</option>
-                    <option value="de-DE">German</option>
-                    <option value="zh-CN">Chinese (Mandarin)</option>
-                    <option value="es-ES">Spanish</option>
-                    <option value="fr-FR">French</option>
-                    <option value="ja-JP">Japanese</option>
-                    <option value="ko-KR">Korean</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="target_language">Target Language:</label>
-                <select id="target_language" name="target_language" required>
-                    <option value="de-DE">German</option>
-                    <option value="en-US">English (US)</option>
-                    <option value="zh-CN">Chinese (Mandarin)</option>
-                    <option value="es-ES">Spanish</option>
-                    <option value="fr-FR">French</option>
-                    <option value="ja-JP">Japanese</option>
-                    <option value="ko-KR">Korean</option>
-                </select>
-            </div>
+            <fieldset style="border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                <legend style="font-weight: bold; padding: 0 10px;">Target Settings</legend>
+                
+                <div class="form-group">
+                    <label for="to_number">To Number (Target):</label>
+                    <input type="tel" id="to_number" name="to_number" placeholder="+1234567890" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="target_language">Target Language:</label>
+                    <select id="target_language" name="target_language" required>
+                        <option value="de-DE">German</option>
+                        <option value="en-US">English (US)</option>
+                        <option value="zh-CN">Chinese (Mandarin)</option>
+                        <option value="es-ES">Spanish</option>
+                        <option value="fr-FR">French</option>
+                        <option value="ja-JP">Japanese</option>
+                        <option value="ko-KR">Korean</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="target_tts_provider">TTS Provider:</label>
+                    <select id="target_tts_provider" name="target_tts_provider" required>
+                        <option value="ElevenLabs">ElevenLabs</option>
+                        <option value="Google">Google</option>
+                        <option value="Amazon">Amazon</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="target_voice">Voice (optional):</label>
+                    <input type="text" id="target_voice" name="target_voice" placeholder="Enter voice ID (leave empty for default)">
+                </div>
+            </fieldset>
             
             <button type="submit">Initiate Translation Call</button>
         </form>
+        
+        <!-- Call Logs Section moved to bottom -->
+        <div id="call-logs" style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #ddd;">
+            <h3>Recent Calls</h3>
+            <ul id="call-list">
+                <!-- Logs will be temporary, session-only -->
+            </ul>
+        </div>
     </div>
+    
+    <script>
+        // Simple function to add a call log entry (session only)
+        function addCallLog(fromNumber, sourceLanguage, toNumber, targetLanguage) {
+            const callList = document.getElementById('call-list');
+            const timestamp = new Date().toLocaleString();
+            
+            // Create new log entry
+            const li = document.createElement('li');
+            li.textContent = `${timestamp} - ${fromNumber} (${sourceLanguage}) → ${toNumber} (${targetLanguage})`;
+            
+            // Insert at the beginning (newest first)
+            callList.insertBefore(li, callList.firstChild);
+            
+            // Keep only last 10 logs in memory
+            while (callList.children.length > 10) {
+                callList.removeChild(callList.lastChild);
+            }
+        }
+        
+        // Handle form submission to add log
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                const fromNumber = document.getElementById('from_number').value;
+                const sourceLanguage = document.getElementById('source_language').value;
+                const toNumber = document.getElementById('to_number').value;
+                const targetLanguage = document.getElementById('target_language').value;
+                
+                // Add temporary log entry
+                addCallLog(fromNumber, sourceLanguage, toNumber, targetLanguage);
+            });
+        });
+    </script>
 </body>
 </html>
