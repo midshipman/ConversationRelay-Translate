@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VoxRay Translate - Call Setup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .note {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        #call-logs {
+            margin-bottom: 20px;
+        }
+        #call-logs h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        #call-list {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #call-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+        #call-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VoxRay Translate - Call Setup</h1>
+        <div class="note">
+            <strong>Note:</strong> Enter phone numbers in international format (e.g., +1234567890)
+        </div>
+        <div id="call-logs">
+            <h3>Recent Calls</h3>
+            <ul id="call-list">
+                <li>2025-07-01 09:24:52 - +4917673552924 (en-US) → +18339961848 (de-DE) - 呼叫中...</li>
+
+            </ul>
+        </div>
+        <form action="/initiate-call" method="post">
+            <div class="form-group">
+                <label for="from_number">From Number (Source):</label>
+                <input type="tel" id="from_number" name="from_number" placeholder="+1234567890" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="to_number">To Number (Target):</label>
+                <input type="tel" id="to_number" name="to_number" placeholder="+0987654321" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="source_language">Source Language:</label>
+                <select id="source_language" name="source_language" required>
+                    <option value="en-US">English (US)</option>
+                    <option value="de-DE">German</option>
+                    <option value="zh-CN">Chinese (Mandarin)</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
+                    <option value="ja-JP">Japanese</option>
+                    <option value="ko-KR">Korean</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="target_language">Target Language:</label>
+                <select id="target_language" name="target_language" required>
+                    <option value="de-DE">German</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="zh-CN">Chinese (Mandarin)</option>
+                    <option value="es-ES">Spanish</option>
+                    <option value="fr-FR">French</option>
+                    <option value="ja-JP">Japanese</option>
+                    <option value="ko-KR">Korean</option>
+                </select>
+            </div>
+            
+            <button type="submit">Initiate Translation Call</button>
+        </form>
+    </div>
+</body>
+</html>
