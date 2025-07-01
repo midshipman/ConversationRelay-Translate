@@ -59,30 +59,6 @@
             margin-bottom: 20px;
             font-size: 14px;
         }
-        #call-logs {
-            margin-bottom: 20px;
-        }
-        #call-logs h3 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        #call-list {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 0;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        #call-list li {
-            padding: 5px 0;
-            border-bottom: 1px solid #e9ecef;
-            font-size: 14px;
-        }
-        #call-list li:last-child {
-            border-bottom: none;
-        }
     </style>
 </head>
 <body>
@@ -91,9 +67,28 @@
         <div class="note">
             <strong>Note:</strong> Enter phone numbers in international format (e.g., +1234567890)
         </div>
-        <div id="call-logs">
-            <h3>Recent Calls</h3>
-            <ul id="call-list">
+        <div id="call-logs"><h3>Recent Calls</h3>
+        <div class="log-entry" style="background-color: #e8f5e8; border: 1px solid #4caf50; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 14px;">
+            <strong>Call Initiated:</strong> 2025-06-30 18:57:01<br>
+            <strong>Session ID:</strong> session_1751302621_4917673552924_18339961848<br>
+            <strong>From:</strong> +4917673552924 (en-US) → <strong>To:</strong> +18339961848 (de-DE)<br>
+            <em>Status: Calling both parties...</em>
+        
+        <div class="log-entry" style="background-color: #e8f5e8; border: 1px solid #4caf50; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 14px;">
+            <strong>Call Initiated:</strong> 2025-07-01 08:42:34<br>
+            <strong>Session ID:</strong> session_1751352153_4917673552924_18339961848<br>
+            <strong>From:</strong> +4917673552924 (en-US) → <strong>To:</strong> +18339961848 (de-DE)<br>
+            <em>Status: Calling both parties...</em>
+        
+        <div class="log-entry" style="background-color: #e8f5e8; border: 1px solid #4caf50; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 14px;">
+            <strong>Call Initiated:</strong> 2025-07-01 08:44:43<br>
+            <strong>Session ID:</strong> session_1751352282_4917673552924_18339961848<br>
+            <strong>From:</strong> +4917673552924 (en-US) → <strong>To:</strong> +18339961848 (de-DE)<br>
+            <em>Status: Calling both parties...</em>
+        </div>
+        </div>
+        </div>
+
                 <li>2025-07-01 09:24:52 - +4917673552924 (en-US) → +18339961848 (de-DE) - 呼叫中...</li>
 
             </ul>
