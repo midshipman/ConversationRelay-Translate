@@ -52,9 +52,9 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
         {"role": "system", "content": f"You are a professional real-time translator. Translate the following {source_lang} text to {target_lang}. Provide only the translation, no explanations or additional text."},
         {"role": "user", "content": text}
     ]
-    logging.debug(f"Translating text: {text} from {source_lang} to {target_lang}")
+    logging.info(f"Translating text: {text} from {source_lang} to {target_lang}")
     stream = await openai_client.chat.completions.create(
-        model="gpt-4.1",
+        model="gpt-4o",
         messages=messages,
         stream=True,
         temperature=0.3,  # Lower temperature for more consistent translations
@@ -63,7 +63,7 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
     async for chunk in stream:
         if chunk.choices[0].delta.content is not None:
             token = chunk.choices[0].delta.content
-            logging.debug(f"Received token from llm: {token}")
+            logging.info(f"Received token from llm: {token}")
             yield {
                 "token": token,
                 "last": False,
@@ -142,7 +142,7 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            logging.debug(f"Source WebSocket Message: {message}")
+            logging.info(f"Source WebSocket Message: {message}")
 
             if message["type"] == "setup":
                 call_sid = message["callSid"]
