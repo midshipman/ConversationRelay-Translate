@@ -17,6 +17,7 @@ logging.basicConfig(
     format='%(asctime)s.%(msecs)03d - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
+logging.getLogger('twilio').setLevel(logging.WARNING)
 
 load_dotenv()
 app = FastAPI()
@@ -51,7 +52,7 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
         {"role": "system", "content": f"You are a professional real-time translator. Translate the following {source_lang} text to {target_lang}. Provide only the translation, no explanations or additional text."},
         {"role": "user", "content": text}
     ]
-    
+    logging.debug(f"Translating text: {text} from {source_lang} to {target_lang}")
     stream = await openai_client.chat.completions.create(
         model="gpt-4.1",
         messages=messages,
@@ -61,8 +62,10 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
     
     async for chunk in stream:
         if chunk.choices[0].delta.content is not None:
+            token = chunk.choices[0].delta.content
+            logging.debug(f"Received token from llm: {token}")
             yield {
-                "token": chunk.choices[0].delta.content,
+                "token": token,
                 "last": False,
                 "type": "text",
             }
