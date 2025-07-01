@@ -314,9 +314,9 @@ async def initiate_call(request: Request):
     source_language = form_data.get("source_language")
     target_language = form_data.get("target_language")
     source_tts_provider = form_data.get("source_tts_provider", "ElevenLabs")
-    source_voice = form_data.get("source_voice", "UgBBYS2sOqTuMpoF3BR0")
+    source_voice = form_data.get("source_voice", "")
     target_tts_provider = form_data.get("target_tts_provider", "ElevenLabs")
-    target_voice = form_data.get("target_voice", "UgBBYS2sOqTuMpoF3BR0")
+    target_voice = form_data.get("target_voice", "")
     
     # Validate required fields
     if not all([from_number, to_number, source_language, target_language]):
