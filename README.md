@@ -16,13 +16,13 @@ A real-time voice translation system built with FastAPI, Twilio, and OpenAI that
    - Maintains WebSocket connections for both callers
 
 2. **WebSocket Endpoints**
-   - `/ws/source/{session_id}` - Handles source language caller
-   - `/ws/target/{session_id}` - Handles target language callee
+   - `/ws/source/{session_id}` - Handles source  caller websocket
+   - `/ws/target/{session_id}` - Handles target  callee websocket
    - Real-time bidirectional voice processing
 
 3. **Voice Webhooks**
-   - `/voice` - Incoming call handler (creates sessions and outbound calls) and creates source socket
-   - `/voice/target/{session_id}` - Outbound call handler, creates target socket
+   - `/voice/source/{session_id}` - Outbound call handler for source language speaker
+   - `/voice/target/{session_id}` - Outbound call handler for target language speaker
 
 4. **Translation Engine**
    - Streaming translation using OpenAI GPT-4
