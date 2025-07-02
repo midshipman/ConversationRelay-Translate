@@ -21,6 +21,15 @@
             text-align: center;
             margin-bottom: 30px;
         }
+        .description {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+        }
         .form-group {
             margin-bottom: 20px;
         }
@@ -87,7 +96,11 @@
     <div class="container">
         <h1>VoxRay Translate - Call Setup</h1>
         
-        <!-- 成功/错误消息 -->
+        <div class="description">
+            <p><strong>Call Instructions:</strong> Both parties will receive calls from the system - please answer and take turns speaking with natural pauses at the end of sentences. The system will automatically detect pauses and translate your speech to the other party, so please wait patiently for translation to complete before continuing the conversation.</p>
+        </div>
+        
+        <!-- Success/Error Messages -->
         <div id="success-message" class="success-message"></div>
         <div id="error-message" class="error-message"></div>
         
@@ -194,31 +207,31 @@
                 errorDiv.style.display = 'none';
             }
             
-            // 5秒后自动隐藏消息
+            
             setTimeout(() => {
                 successDiv.style.display = 'none';
                 errorDiv.style.display = 'none';
             }, 5000);
         }
         
-        // AJAX提交表单
+        
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('call-form');
             const submitBtn = document.getElementById('submit-btn');
             
             form.addEventListener('submit', async function(e) {
-                e.preventDefault(); // 阻止默认表单提交
+                e.preventDefault(); 
                 
-                // 显示加载状态
+                
                 submitBtn.textContent = 'Initiating Call...';
                 submitBtn.disabled = true;
                 form.classList.add('loading');
                 
                 try {
-                    // 收集表单数据
+                    
                     const formData = new FormData(form);
                     
-                    // 发送AJAX请求
+                    
                     const response = await fetch('/initiate-call', {
                         method: 'POST',
                         body: formData
@@ -227,28 +240,27 @@
                     if (response.ok) {
                         const result = await response.json();
                         
-                        // 显示成功消息
-                        showMessage(`通话发起成功！会话ID: ${result.session_id}`);
                         
-                        // 添加到通话日志
+                        showMessage(`Call success！session ID: ${result.session_id}`);
+                        
+                        
                         const fromNumber = formData.get('from_number');
                         const sourceLanguage = formData.get('source_language');
                         const toNumber = formData.get('to_number');
                         const targetLanguage = formData.get('target_language');
                         addCallLog(fromNumber, sourceLanguage, toNumber, targetLanguage);
                         
-                        // 可选：重置表单
-                        // form.reset();
+                        
                         
                     } else {
                         const errorText = await response.text();
-                        showMessage(`发起通话失败: ${errorText}`, true);
+                        showMessage(`call failed: ${errorText}`, true);
                     }
                     
                 } catch (error) {
-                    showMessage(`网络错误: ${error.message}`, true);
+                    showMessage(`net: ${error.message}`, true);
                 } finally {
-                    // 恢复按钮状态
+                    
                     submitBtn.textContent = 'Initiate Translation Call';
                     submitBtn.disabled = false;
                     form.classList.remove('loading');

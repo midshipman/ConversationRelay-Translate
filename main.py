@@ -52,7 +52,7 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
         {"role": "system", "content": f"You are a professional real-time translator. Translate the following {source_lang} text to {target_lang}. Provide only the translation, no explanations or additional text."},
         {"role": "user", "content": text}
     ]
-    logging.info(f"Translating text: {text} from {source_lang} to {target_lang}")
+    # logging.info(f"Translating text: {text} from {source_lang} to {target_lang}")
     stream = await openai_client.chat.completions.create(
         model="gpt-4o",
         messages=messages,
