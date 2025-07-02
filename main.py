@@ -371,10 +371,19 @@ async def initiate_call(request: Request):
         await create_outbound_source_call(session_id, session.host, from_number, twilio_number)
         await create_outbound_target_call(session_id, session.host, to_number, twilio_number)
         
-        # Redirect back to the form page
-        
-        return RedirectResponse(url="/", status_code=303)
-
+        # 返回JSON响应而不是重定向
+        return JSONResponse(
+            content={
+                "status": "success",
+                "message": "call started successfully",
+                "session_id": session_id,
+                "from_number": from_number,
+                "to_number": to_number,
+                "source_language": source_language,
+                "target_language": target_language
+            },
+            status_code=200
+        )
         
     except Exception as e:
         logging.error(f"Error initiating call: {e}")
