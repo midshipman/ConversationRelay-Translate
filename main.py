@@ -63,7 +63,7 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
     async for chunk in stream:
         if chunk.choices[0].delta.content is not None:
             token = chunk.choices[0].delta.content
-            logging.info(f"Received token from llm: {token}")
+            # logging.info(f"Received token from llm: {token}")
             yield {
                 "token": token,
                 "last": False,
@@ -88,7 +88,7 @@ async def create_outbound_target_call(session_id: str, host: str, target_number:
         
         # Use the host passed from the incoming request
         webhook_url = f"https://{host}/voice/target/{session_id}"
-        logging.debug(f"Webhook URL for target caller: {webhook_url}")
+        logging.info(f"Webhook URL for target caller: {webhook_url}")
         call = twilio_client.calls.create(
             to=target_number,
             from_=twilio_number,
@@ -116,7 +116,7 @@ async def create_outbound_source_call(session_id: str, host: str, source_number:
         
         # Use the host passed from the incoming request
         webhook_url = f"https://{host}/voice/source/{session_id}"
-        logging.debug(f"Webhook URL for source caller: {webhook_url}")
+        logging.info(f"Webhook URL for source caller: {webhook_url}")
         call = twilio_client.calls.create(
             to=source_number,
             from_=twilio_number,
@@ -197,7 +197,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            logging.debug(f"Target WebSocket Message: {message}")
+            logging.info(f"Target WebSocket Message: {message}")
 
             if message["type"] == "setup":
                 call_sid = message["callSid"]
@@ -253,7 +253,7 @@ async def target_voice_webhook(request: Request, session_id: str):
     # Get the host from request headers
     host = request.headers.get('host')
     ws_url = f"wss://{host}/ws/target/{session_id}"
-    logging.debug(f"Target WebSocket URL: {ws_url}")
+    logging.info(f"Target WebSocket URL: {ws_url}")
     
     # Get target language and TTS settings from session or defaults
     target_language = ""  
@@ -290,7 +290,7 @@ async def source_voice_webhook(request: Request, session_id: str):
     # Get the host from request headers
     host = request.headers.get('host')
     ws_url = f"wss://{host}/ws/source/{session_id}"
-    logging.debug(f"Source WebSocket URL: {ws_url}")
+    logging.info(f"Source WebSocket URL: {ws_url}")
     
     # Get source language and TTS settings from session or defaults
     source_language = ""  # default
