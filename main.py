@@ -8,7 +8,7 @@ from fastapi.responses import Response
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from twilio.rest import Client
-from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse
 import time
 
 # Configure logging
@@ -270,7 +270,7 @@ async def target_voice_webhook(request: Request, session_id: str):
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay url="{ws_url}" language="{target_language}" ttsProvider="{target_tts_provider}"{voice_attr} />
+                    <ConversationRelay url="{ws_url}" language="{target_language}" ttsProvider="{target_tts_provider}"{voice_attr} transcriptionProvider="deepgram"/>
                 </Connect>
             </Response>'''
     
@@ -307,7 +307,7 @@ async def source_voice_webhook(request: Request, session_id: str):
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay url="{ws_url}" language="{source_language}" ttsProvider="{source_tts_provider}"{voice_attr} />
+                    <ConversationRelay url="{ws_url}" language="{source_language}" ttsProvider="{source_tts_provider}"{voice_attr} transcriptionProvider="deepgram"/>
                 </Connect>
             </Response>'''
     
@@ -371,7 +371,7 @@ async def initiate_call(request: Request):
         await create_outbound_source_call(session_id, session.host, from_number, twilio_number)
         await create_outbound_target_call(session_id, session.host, to_number, twilio_number)
         
-        # 返回JSON响应而不是重定向
+        
         return JSONResponse(
             content={
                 "status": "success",
