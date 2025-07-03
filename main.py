@@ -307,7 +307,7 @@ async def source_voice_webhook(request: Request, session_id: str):
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay url="{ws_url}" language="{source_language}" ttsProvider="{source_tts_provider}"{voice_attr} transcriptionProvider="deepgram"/>
+                    <ConversationRelay debug="speaker-events" url="{ws_url}" language="{source_language}" ttsProvider="{source_tts_provider}"{voice_attr} transcriptionProvider="deepgram"/>
                 </Connect>
             </Response>'''
     
