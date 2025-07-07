@@ -23,6 +23,7 @@ load_dotenv()
 app = FastAPI()
 openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
+music_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/clock-ticking-sound-effect-240503.mp3"
 
 # Session management for translation pairs
 # Translation session management
@@ -172,10 +173,24 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                     
                     logging.info(f"Translated from {source_lang} to {target_lang}: {translated_text}")
                     
-                   
+            elif message["type"] == "info":    
+                logging.info(f"Source info: {message}")
+                if message["name"] == "clientSpeaking" and message["value"] == "off":
+                    logging.info(f"Source finished speaking, starting wait music")
+                    if session_id in translation_sessions:
+                        session = translation_sessions[session_id]    
+                        music_event = {
+                            "type": "play",
+                            "source": music_url,
+                            "loop": 1,
+                            "preemptible": True,
+                            "interruptible": True
+                        }
+                        # await session.source_websocket.send_json(music_event)
+
 
             elif message["type"] == "interrupt":
-                logging.warning("Source response interrupted")
+                logging.info("Source interrupted")
 
             elif message["type"] == "error":
                 logging.error("Source WebSocket error")
@@ -197,7 +212,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            logging.info(f"Target WebSocket Message: {message}")
+            # logging.info(f"Target WebSocket Message: {message}")
 
             if message["type"] == "setup":
                 call_sid = message["callSid"]
@@ -226,9 +241,12 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                         translated_text += event["token"]
                     
                     logging.info(f"Translated from {target_lang} to {source_lang}: {translated_text}")
-                    
+
+            elif message["type"] == "info":    
+                logging.info(f"Target info: {message}")
+
             elif message["type"] == "interrupt":
-                logging.warning("Target response interrupted")
+                logging.warning("Target interrupted")
 
             elif message["type"] == "error":
                 logging.error("Target WebSocket error")
@@ -267,10 +285,21 @@ async def target_voice_webhook(request: Request, session_id: str):
     
     # TwiML response for ConversationRelay with target language and TTS settings
     voice_attr = f' voice="{target_voice}"' if target_voice else ''
+    # Set transcription provider based on target language
+    if target_language.startswith('ar-'):
+        stt_attr = f' transcriptionProvider="google"'
+    else:
+        stt_attr = f' transcriptionProvider="deepgram"'
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay url="{ws_url}" language="{target_language}" ttsProvider="{target_tts_provider}"{voice_attr} transcriptionProvider="deepgram"/>
+                    <ConversationRelay 
+                        debug="speaker-events" 
+                        url="{ws_url}" 
+                        language="{target_language}" 
+                        ttsProvider="{target_tts_provider}"
+                        {voice_attr} 
+                        {stt_attr}/>
                 </Connect>
             </Response>'''
     
@@ -304,10 +333,21 @@ async def source_voice_webhook(request: Request, session_id: str):
     
     # TwiML response for ConversationRelay with source language and TTS settings
     voice_attr = f' voice="{source_voice}"' if source_voice else ''
+    # Set transcription provider based on source language
+    if source_language.startswith('ar-'):
+        stt_attr = f' transcriptionProvider="google"'
+    else:
+        stt_attr = f' transcriptionProvider="deepgram"'
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay debug="speaker-events" url="{ws_url}" language="{source_language}" ttsProvider="{source_tts_provider}"{voice_attr} transcriptionProvider="deepgram"/>
+                    <ConversationRelay 
+                        debug="speaker-events" 
+                        url="{ws_url}" 
+                        language="{source_language}" 
+                        ttsProvider="{source_tts_provider}"
+                        {voice_attr}
+                        {stt_attr}/>
                 </Connect>
             </Response>'''
     
