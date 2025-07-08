@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from twilio.rest import Client
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse
 import time
+from litellm import acompletion
 
 # Configure logging
 logging.basicConfig(
@@ -54,8 +55,8 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
         {"role": "user", "content": text}
     ]
     # logging.info(f"Translating text: {text} from {source_lang} to {target_lang}")
-    stream = await openai_client.chat.completions.create(
-        model="gpt-4o",
+    stream = await acompletion(
+        model="openai/gpt-4.1-nano",
         messages=messages,
         stream=True,
         temperature=0.3,  # Lower temperature for more consistent translations
