@@ -321,7 +321,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                     if not await check_session_readiness_and_notify(session, session_id):
                         continue  # Skip this prompt if not ready
 
-            elif message["type"] == "prompt":
+            if message["type"] == "prompt":
                 # Phase 2: Translate target back to source
                 prompt = message["voicePrompt"]
                 logging.info(f"Target prompt: {prompt}")
@@ -352,13 +352,13 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                         }
                     await session.target_websocket.send_json(music_event)
 
-            elif message["type"] == "info":    
+            if message["type"] == "info":    
                 logging.info(f"Target info: {message}")
 
-            elif message["type"] == "interrupt":
+            if message["type"] == "interrupt":
                 logging.warning("Target interrupted")
 
-            elif message["type"] == "error":
+            if message["type"] == "error":
                 logging.error("Target WebSocket error")
 
     except Exception as e:
