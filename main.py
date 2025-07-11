@@ -106,6 +106,36 @@ def generate_conversation_relay_twiml(ws_url: str, language: str, tts_provider: 
             </Response>'''
     return twiml
 
+async def check_session_readiness_and_notify(session: TranslationSession, session_id: str) -> bool:
+    """Check if session is ready and send appropriate notifications to users.
+    
+    Returns:
+        bool: True if session is ready for translation, False if still waiting
+    """
+    if not (session.source_websocket and session.target_websocket):
+        logging.info(f"Source or target websocket not ready for session {session_id}")
+        # Send waiting message to user
+        waiting_message = {
+            "type": "text",
+            "token": "Please wait while we connect the other party to the call.",
+            "last": True,
+        }
+        if session.source_websocket:
+            await session.source_websocket.send_json(waiting_message)
+        if session.target_websocket:
+            await session.target_websocket.send_json(waiting_message)
+        return False
+    else:
+        ready_message = {
+            "type": "text",
+            "token": "You are ready to talk.",
+            "last": True,
+        }
+        await session.source_websocket.send_json(ready_message)
+        await session.target_websocket.send_json(ready_message)
+        return True
+
+
 async def create_outbound_target_call(session_id: str, host: str, target_number: str, twilio_number: str):
     """Create outbound call to target language speaker"""
     try:
@@ -167,7 +197,7 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for source language callers"""
     await websocket.accept()
     call_sid: Optional[str] = None
-    
+
     try:
         while True:
             data = await websocket.receive_text()
@@ -182,9 +212,11 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                 if session_id in translation_sessions:
                     session = translation_sessions[session_id]
                     session.source_websocket = websocket
-                    
+                
+                    if not await check_session_readiness_and_notify(session, session_id):
+                        continue  # Skip this prompt if not ready
 
-            elif message["type"] == "prompt":
+            if message["type"] == "prompt":
                 prompt = message["voicePrompt"]
                 logging.info(f"Source prompt: {prompt}")
                 
@@ -193,7 +225,7 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                     session = translation_sessions[session_id]
                     source_lang = session.source_language
                     target_lang = session.target_language
-                    
+
                     # Translate using streaming
                     translated_text = ""
                     async for event in translate_text_streaming(prompt, source_lang, target_lang):
@@ -212,13 +244,13 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                         }
                     await session.source_websocket.send_json(music_event)
                     
-            elif message["type"] == "info":    
+            if message["type"] == "info":    
                 logging.info(f"Source info: {message}")
 
-            elif message["type"] == "interrupt":
+            if message["type"] == "interrupt":
                 logging.info("Source interrupted")
 
-            elif message["type"] == "error":
+            if message["type"] == "error":
                 logging.error("Source WebSocket error")
 
     except Exception as e:
@@ -249,6 +281,9 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                     session = translation_sessions[session_id]
                     session.target_call_sid = call_sid
                     session.target_websocket = websocket
+                
+                    if not await check_session_readiness_and_notify(session, session_id):
+                        continue  # Skip this prompt if not ready
 
             elif message["type"] == "prompt":
                 # Phase 2: Translate target back to source
