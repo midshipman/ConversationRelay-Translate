@@ -24,7 +24,7 @@ load_dotenv()
 app = FastAPI()
 openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
-music_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/clock-ticking-sound-effect-240503.mp3"
+music_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/arcade-melody-295434.mp3"
 
 # Session management for translation pairs
 # Translation session management
@@ -56,7 +56,7 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
     ]
     # logging.info(f"Translating text: {text} from {source_lang} to {target_lang}")
     stream = await acompletion(
-        model="openai/gpt-4.1-nano",
+        model="gpt-4.1-nano",
         messages=messages,
         stream=True,
         temperature=0.3,  # Lower temperature for more consistent translations
@@ -173,22 +173,19 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                         translated_text += event["token"]
                     
                     logging.info(f"Translated from {source_lang} to {target_lang}: {translated_text}")
-                    
-            elif message["type"] == "info":    
-                logging.info(f"Source info: {message}")
-                if message["name"] == "clientSpeaking" and message["value"] == "off":
-                    logging.info(f"Source finished speaking, starting wait music")
-                    if session_id in translation_sessions:
-                        session = translation_sessions[session_id]    
-                        music_event = {
+
+                    #play music while waiting for the response
+                    music_event = {
                             "type": "play",
                             "source": music_url,
-                            "loop": 1,
+                            "loop": 0,
                             "preemptible": True,
                             "interruptible": True
                         }
-                        # await session.source_websocket.send_json(music_event)
-
+                    await session.source_websocket.send_json(music_event)
+                    
+            elif message["type"] == "info":    
+                logging.info(f"Source info: {message}")
 
             elif message["type"] == "interrupt":
                 logging.info("Source interrupted")
@@ -242,6 +239,16 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                         translated_text += event["token"]
                     
                     logging.info(f"Translated from {target_lang} to {source_lang}: {translated_text}")
+                    
+                    #play music while waiting for the response
+                    music_event = {
+                            "type": "play",
+                            "source": music_url,
+                            "loop": 0,
+                            "preemptible": True,
+                            "interruptible": True
+                        }
+                    await session.target_websocket.send_json(music_event)
 
             elif message["type"] == "info":    
                 logging.info(f"Target info: {message}")
