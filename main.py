@@ -26,6 +26,7 @@ app = FastAPI()
 openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
 music_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/arcade-melody-295434.mp3"
+wait_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/mixkit-marimba-ringtone-1359.wav"
 
 os.environ['CONFIDENT_API_KEY']=os.getenv("CONFIDENT_API_KEY")
 litellm.success_callback = ["deepeval"]
@@ -114,25 +115,57 @@ async def check_session_readiness_and_notify(session: TranslationSession, sessio
     """
     if not (session.source_websocket and session.target_websocket):
         logging.info(f"Source or target websocket not ready for session {session_id}")
-        # Send waiting message to user
-        waiting_message = {
-            "type": "text",
-            "token": "Please wait while we connect the other party to the call.",
-            "last": True,
+
+        wait_event = {
+            "type": "play",
+            "source": wait_url,
+            "loop": 0,
+            "preemptible": True,
+            "interruptible": False
         }
+        
+        # Send waiting message in appropriate language to each participant
         if session.source_websocket:
-            await session.source_websocket.send_json(waiting_message)
+            await session.source_websocket.send_json(wait_event)
+            
         if session.target_websocket:
-            await session.target_websocket.send_json(waiting_message)
+            await session.source_websocket.send_json(wait_event)
+            
         return False
     else:
-        ready_message = {
+        # Send ready message in appropriate language to each participant
+        # Translate ready message to source language
+        source_ready_text = ""
+        async for event in translate_text_streaming(
+            "You are ready to talk.", 
+            "en-US", 
+            session.source_language
+        ):
+            source_ready_text += event["token"]
+        
+        ready_message_source = {
             "type": "text",
-            "token": "You are ready to talk.",
+            "token": source_ready_text,
             "last": True,
         }
-        await session.source_websocket.send_json(ready_message)
-        await session.target_websocket.send_json(ready_message)
+        await session.source_websocket.send_json(ready_message_source)
+        
+        # Translate ready message to target language
+        target_ready_text = ""
+        async for event in translate_text_streaming(
+            "You are ready to talk.", 
+            "en-US", 
+            session.target_language
+        ):
+            target_ready_text += event["token"]
+        
+        ready_message_target = {
+            "type": "text",
+            "token": target_ready_text,
+            "last": True,
+        }
+        await session.target_websocket.send_json(ready_message_target)
+        
         return True
 
 
@@ -225,6 +258,9 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                     session = translation_sessions[session_id]
                     source_lang = session.source_language
                     target_lang = session.target_language
+                    
+                    if not session.target_websocket:
+                        continue  # Skip this prompt if not ready
 
                     # Translate using streaming
                     translated_text = ""
@@ -294,6 +330,9 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                     session = translation_sessions[session_id]
                     target_lang = session.target_language
                     source_lang = session.source_language
+
+                    if not session.source_websocket:
+                        continue  # Skip this prompt if not ready
                     
                     # Translate target → source
                     translated_text = ""
