@@ -78,6 +78,29 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
         "last": True,
     }
 
+def generate_conversation_relay_twiml(ws_url: str, language: str, tts_provider: str, voice: str = "") -> str:
+    """Generate TwiML response for ConversationRelay with language and TTS settings"""
+    voice_attr = f' voice="{voice}"' if voice else ''
+    # Set transcription provider based on language
+    if language.startswith('ar-'):
+        stt_attr = f' transcriptionProvider="google"'
+    else:
+        stt_attr = f' transcriptionProvider="deepgram"'
+    
+    twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
+            <Response>
+                <Connect>
+                    <ConversationRelay 
+                        debug="speaker-events" 
+                        url="{ws_url}" 
+                        language="{language}" 
+                        ttsProvider="{tts_provider}"
+                        {voice_attr} 
+                        {stt_attr}/>
+                </Connect>
+            </Response>'''
+    return twiml
+
 async def create_outbound_target_call(session_id: str, host: str, target_number: str, twilio_number: str):
     """Create outbound call to target language speaker"""
     try:
@@ -291,25 +314,13 @@ async def target_voice_webhook(request: Request, session_id: str):
         target_tts_provider = session.target_tts_provider
         target_voice = session.target_voice
     
-    # TwiML response for ConversationRelay with target language and TTS settings
-    voice_attr = f' voice="{target_voice}"' if target_voice else ''
-    # Set transcription provider based on target language
-    if target_language.startswith('ar-'):
-        stt_attr = f' transcriptionProvider="google"'
-    else:
-        stt_attr = f' transcriptionProvider="deepgram"'
-    twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
-            <Response>
-                <Connect>
-                    <ConversationRelay 
-                        debug="speaker-events" 
-                        url="{ws_url}" 
-                        language="{target_language}" 
-                        ttsProvider="{target_tts_provider}"
-                        {voice_attr} 
-                        {stt_attr}/>
-                </Connect>
-            </Response>'''
+   # Generate TwiML response using the new function
+    twiml = generate_conversation_relay_twiml(
+        ws_url=ws_url,
+        language=target_language,
+        tts_provider=target_tts_provider,
+        voice=target_voice
+    )
     
     return Response(content=twiml, media_type="text/xml")
 
@@ -339,25 +350,13 @@ async def source_voice_webhook(request: Request, session_id: str):
         source_tts_provider = session.source_tts_provider
         source_voice = session.source_voice
     
-    # TwiML response for ConversationRelay with source language and TTS settings
-    voice_attr = f' voice="{source_voice}"' if source_voice else ''
-    # Set transcription provider based on source language
-    if source_language.startswith('ar-'):
-        stt_attr = f' transcriptionProvider="google"'
-    else:
-        stt_attr = f' transcriptionProvider="deepgram"'
-    twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
-            <Response>
-                <Connect>
-                    <ConversationRelay 
-                        debug="speaker-events" 
-                        url="{ws_url}" 
-                        language="{source_language}" 
-                        ttsProvider="{source_tts_provider}"
-                        {voice_attr}
-                        {stt_attr}/>
-                </Connect>
-            </Response>'''
+     # Generate TwiML response using the new function
+    twiml = generate_conversation_relay_twiml(
+        ws_url=ws_url,
+        language=source_language,
+        tts_provider=source_tts_provider,
+        voice=source_voice
+    )
     
     return Response(content=twiml, media_type="text/xml")
 
