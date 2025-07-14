@@ -51,13 +51,26 @@ Source Caller → WebSocket → Translation Engine → WebSocket → Target Call
 - **Error Handling**: Comprehensive error handling and logging
 - **Scalable Architecture**: FastAPI-based async architecture
 
-## Configuration
-
 ### Supported Languages
+
+ConversationRelay supports any language pair available in Twilio's Speech-to-Text (STT) and Text-to-Speech (TTS) services. The demo UI includes a selection of popular languages, though many more are supported:
+
+- `en-US` English US
+- `de-DE` German
+- `es-ES` Spanish
+- `fr-FR` French
+- `it-IT` Italian
+- `ro-RO` Romanian
+- `pt-PT` Portuguese
+- `el-GR` Greek
+- `ja-JP` Japanese
+- `zh-CN` Chinese Mandarin
+- `ar-SA` Arabic
+
+**Default Configuration:**
 
 - **Source Language**: Defaults to `en-US` (English)
 - **Target Language**: Defaults to `de-DE` (German)
-- Configurable via environment variables for any language pair
 
 ## Installation and Setup
 
