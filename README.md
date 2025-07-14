@@ -108,15 +108,25 @@ SOURCE_LANGUAGE=en-US
 TARGET_LANGUAGE=de-DE
 ```
 
-### 3. Run the Application:
+### 3. Configure Twilio Webhook:
+
+Point your Twilio phone number webhook to `/voice`
+
+### 6. Run the Application:
 
 ```bash
 uv run  main.py
 ```
 
-### 4. Configure Twilio Webhook:
+### 5. Run Ngrok:
 
-Point your Twilio phone number webhook to `/voice`
+```bash
+ngrok http 8080
+```
+
+### 6. Open Your NGrok URL:
+
+IMPORTANT: Open the public URL given by Ngrok. The demo will not function properly if you open http://localhost:8080
 
 ## Current Status
 
