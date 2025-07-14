@@ -2,7 +2,7 @@ import os
 import json
 import uvicorn
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import Response
 from openai import AsyncOpenAI
@@ -67,7 +67,7 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
         stream=True,
         temperature=0.3,  # Lower temperature for more consistent translations
     )
-    
+
     async for chunk in stream:
         if chunk.choices[0].delta.content is not None:
             token = chunk.choices[0].delta.content
@@ -77,7 +77,7 @@ async def translate_text_streaming(text: str, source_lang: str = "en-US", target
                 "last": False,
                 "type": "text",
             }
-    
+
     yield {
         "token": "",
         "type": "text",
@@ -92,16 +92,16 @@ def generate_conversation_relay_twiml(ws_url: str, language: str, tts_provider: 
         stt_attr = f' transcriptionProvider="google"'
     else:
         stt_attr = f' transcriptionProvider="deepgram"'
-    
+
     twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
             <Response>
                 <Connect>
-                    <ConversationRelay 
-                        debug="speaker-events" 
-                        url="{ws_url}" 
-                        language="{language}" 
+                    <ConversationRelay
+                        debug="speaker-events"
+                        url="{ws_url}"
+                        language="{language}"
                         ttsProvider="{tts_provider}"
-                        {voice_attr} 
+                        {voice_attr}
                         {stt_attr}/>
                 </Connect>
             </Response>'''
@@ -109,7 +109,7 @@ def generate_conversation_relay_twiml(ws_url: str, language: str, tts_provider: 
 
 async def check_session_readiness_and_notify(session: TranslationSession, session_id: str) -> bool:
     """Check if session is ready and send appropriate notifications to users.
-    
+
     Returns:
         bool: True if session is ready for translation, False if still waiting
     """
@@ -123,49 +123,49 @@ async def check_session_readiness_and_notify(session: TranslationSession, sessio
             "preemptible": True,
             "interruptible": False
         }
-        
+
         # Send waiting message in appropriate language to each participant
         if session.source_websocket:
             await session.source_websocket.send_json(wait_event)
-            
+
         if session.target_websocket:
             await session.source_websocket.send_json(wait_event)
-            
+
         return False
     else:
         # Send ready message in appropriate language to each participant
         # Translate ready message to source language
         source_ready_text = ""
         async for event in translate_text_streaming(
-            "You are ready to talk.", 
-            "en-US", 
+            "You are ready to talk.",
+            "en-US",
             session.source_language
         ):
             source_ready_text += event["token"]
-        
+
         ready_message_source = {
             "type": "text",
             "token": source_ready_text,
             "last": True,
         }
         await session.source_websocket.send_json(ready_message_source)
-        
+
         # Translate ready message to target language
         target_ready_text = ""
         async for event in translate_text_streaming(
-            "You are ready to talk.", 
-            "en-US", 
+            "You are ready to talk.",
+            "en-US",
             session.target_language
         ):
             target_ready_text += event["token"]
-        
+
         ready_message_target = {
             "type": "text",
             "token": target_ready_text,
             "last": True,
         }
         await session.target_websocket.send_json(ready_message_target)
-        
+
         return True
 
 
@@ -176,9 +176,9 @@ async def create_outbound_target_call(session_id: str, host: str, target_number:
         if session_id not in translation_sessions:
             logging.error(f"Session {session_id} not found!")
             return
-            
+
         session = translation_sessions[session_id]
-        
+
         # Use the host passed from the incoming request
         webhook_url = f"https://{host}/voice/target/{session_id}"
         logging.info(f"Webhook URL for target caller: {webhook_url}")
@@ -189,11 +189,11 @@ async def create_outbound_target_call(session_id: str, host: str, target_number:
             method="POST",
             record=True
         )
-        
+
         # Update session with target call info
         session.target_call_sid = call.sid
         logging.info(f"Created outbound call to target number: {call.sid}")
-        
+
     except Exception as e:
         logging.error(f"Error creating outbound call: {e}")
 
@@ -204,9 +204,9 @@ async def create_outbound_source_call(session_id: str, host: str, source_number:
         if session_id not in translation_sessions:
             logging.error(f"Session {session_id} not found!")
             return
-            
+
         session = translation_sessions[session_id]
-        
+
         # Use the host passed from the incoming request
         webhook_url = f"https://{host}/voice/source/{session_id}"
         logging.info(f"Webhook URL for source caller: {webhook_url}")
@@ -217,11 +217,11 @@ async def create_outbound_source_call(session_id: str, host: str, source_number:
             method="POST",
             record=True
         )
-        
+
         # Update session with source call info
         session.source_call_sid = call.sid
         logging.info(f"Created outbound call to source number: {call.sid}")
-        
+
     except Exception as e:
         logging.error(f"Error creating outbound source call: {e}")
 
@@ -240,25 +240,25 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
             if message["type"] == "setup":
                 call_sid = message["callSid"]
                 logging.info(f"Source setup initiated for call SID: {call_sid}")
-                
+
                 # Update session with source WebSocket
                 if session_id in translation_sessions:
                     session = translation_sessions[session_id]
                     session.source_websocket = websocket
-                
+
                     if not await check_session_readiness_and_notify(session, session_id):
                         continue  # Skip this prompt if not ready
 
             if message["type"] == "prompt":
                 prompt = message["voicePrompt"]
                 logging.info(f"Source prompt: {prompt}")
-                
+
                 # Get session for language configuration
                 if session_id in translation_sessions:
                     session = translation_sessions[session_id]
                     source_lang = session.source_language
                     target_lang = session.target_language
-                    
+
                     if not session.target_websocket:
                         continue  # Skip this prompt if not ready
 
@@ -267,7 +267,7 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                     async for event in translate_text_streaming(prompt, source_lang, target_lang):
                         await session.target_websocket.send_json(event)
                         translated_text += event["token"]
-                    
+
                     logging.info(f"Translated from {source_lang} to {target_lang}: {translated_text}")
 
                     #play music while waiting for the response
@@ -279,8 +279,8 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
                             "interruptible": True
                         }
                     await session.source_websocket.send_json(music_event)
-                    
-            if message["type"] == "info":    
+
+            if message["type"] == "info":
                 logging.info(f"Source info: {message}")
 
             if message["type"] == "interrupt":
@@ -301,7 +301,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for target language callers"""
     await websocket.accept()
     call_sid: Optional[str] = None
-    
+
     try:
         while True:
             data = await websocket.receive_text()
@@ -311,13 +311,13 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
             if message["type"] == "setup":
                 call_sid = message["callSid"]
                 logging.info(f"Target ws setup initiated for call SID: {call_sid}")
-                
+
                 # Update session with target WebSocket
                 if session_id in translation_sessions:
                     session = translation_sessions[session_id]
                     session.target_call_sid = call_sid
                     session.target_websocket = websocket
-                
+
                     if not await check_session_readiness_and_notify(session, session_id):
                         continue  # Skip this prompt if not ready
 
@@ -325,7 +325,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                 # Phase 2: Translate target back to source
                 prompt = message["voicePrompt"]
                 logging.info(f"Target prompt: {prompt}")
-                
+
                 if session_id in translation_sessions:
                     session = translation_sessions[session_id]
                     target_lang = session.target_language
@@ -333,15 +333,15 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
 
                     if not session.source_websocket:
                         continue  # Skip this prompt if not ready
-                    
+
                     # Translate target → source
                     translated_text = ""
                     async for event in translate_text_streaming(prompt, target_lang, source_lang):
                         await session.source_websocket.send_json(event)
                         translated_text += event["token"]
-                    
+
                     logging.info(f"Translated from {target_lang} to {source_lang}: {translated_text}")
-                    
+
                     #play music while waiting for the response
                     music_event = {
                             "type": "play",
@@ -352,7 +352,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
                         }
                     await session.target_websocket.send_json(music_event)
 
-            if message["type"] == "info":    
+            if message["type"] == "info":
                 logging.info(f"Target info: {message}")
 
             if message["type"] == "interrupt":
@@ -375,24 +375,24 @@ async def target_voice_webhook(request: Request, session_id: str):
     from_number = form_data.get("From")
     to_number = form_data.get("To")
     call_status = form_data.get("CallStatus")
-    
+
     logging.info(f"Outbound target call from {from_number} to {to_number} with SID: {call_sid}, Status: {call_status}")
-    
+
     # Get the host from request headers
     host = request.headers.get('host')
     ws_url = f"wss://{host}/ws/target/{session_id}"
     logging.info(f"Target WebSocket URL: {ws_url}")
-    
+
     # Get target language and TTS settings from session or defaults
-    target_language = ""  
-    target_tts_provider = ""  
-    target_voice = ""  
+    target_language = ""
+    target_tts_provider = ""
+    target_voice = ""
     if session_id in translation_sessions:
         session = translation_sessions[session_id]
         target_language = session.target_language
         target_tts_provider = session.target_tts_provider
         target_voice = session.target_voice
-    
+
    # Generate TwiML response using the new function
     twiml = generate_conversation_relay_twiml(
         ws_url=ws_url,
@@ -400,7 +400,7 @@ async def target_voice_webhook(request: Request, session_id: str):
         tts_provider=target_tts_provider,
         voice=target_voice
     )
-    
+
     return Response(content=twiml, media_type="text/xml")
 
 @app.post("/voice/source/{session_id}")
@@ -411,14 +411,14 @@ async def source_voice_webhook(request: Request, session_id: str):
     from_number = form_data.get("From")
     to_number = form_data.get("To")
     call_status = form_data.get("CallStatus")
-    
+
     logging.info(f"Outbound source call from {from_number} to {to_number} with SID: {call_sid}, Status: {call_status}")
-    
+
     # Get the host from request headers
     host = request.headers.get('host')
     ws_url = f"wss://{host}/ws/source/{session_id}"
     logging.info(f"Source WebSocket URL: {ws_url}")
-    
+
     # Get source language and TTS settings from session or defaults
     source_language = ""  # default
     source_tts_provider = ""  # default
@@ -428,7 +428,7 @@ async def source_voice_webhook(request: Request, session_id: str):
         source_language = session.source_language
         source_tts_provider = session.source_tts_provider
         source_voice = session.source_voice
-    
+
      # Generate TwiML response using the new function
     twiml = generate_conversation_relay_twiml(
         ws_url=ws_url,
@@ -436,7 +436,7 @@ async def source_voice_webhook(request: Request, session_id: str):
         tts_provider=source_tts_provider,
         voice=source_voice
     )
-    
+
     return Response(content=twiml, media_type="text/xml")
 
 @app.get("/")
@@ -456,14 +456,14 @@ async def initiate_call(request: Request):
     source_voice = form_data.get("source_voice", "")
     target_tts_provider = form_data.get("target_tts_provider", "ElevenLabs")
     target_voice = form_data.get("target_voice", "")
-    
+
     # Validate required fields
     if not all([from_number, to_number, source_language, target_language]):
         return HTMLResponse(
             content="<h1>Error: All fields are required</h1><a href='/'>Go back</a>",
             status_code=400
         )
-    
+
     # Get Twilio phone number from environment
     twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
     if not twilio_number:
@@ -471,11 +471,11 @@ async def initiate_call(request: Request):
             content="<h1>Error: Twilio phone number not configured</h1><a href='/'>Go back</a>",
             status_code=500
         )
-    
+
     try:
         # Create unique session ID
         session_id = f"session_{int(time.time())}_{from_number.replace('+', '')}_{to_number.replace('+', '')}"
-        
+
         # Create translation session
         session = TranslationSession(session_id, "")
         session.source_phone_number = from_number
@@ -488,16 +488,16 @@ async def initiate_call(request: Request):
         session.target_voice = target_voice
         session.host = request.headers.get('host')
         translation_sessions[session_id] = session
-        
+
         logging.info(f"Created manual translation session: {session_id}")
         logging.info(f"From: {from_number} ({source_language}) -> To: {to_number} ({target_language})")
         logging.info(f"Source TTS: {source_tts_provider}/{source_voice}, Target TTS: {target_tts_provider}/{target_voice}")
-        
+
         # Create outbound calls to both parties
         await create_outbound_source_call(session_id, session.host, from_number, twilio_number)
         await create_outbound_target_call(session_id, session.host, to_number, twilio_number)
-        
-        
+
+
         return JSONResponse(
             content={
                 "status": "success",
@@ -510,7 +510,7 @@ async def initiate_call(request: Request):
             },
             status_code=200
         )
-        
+
     except Exception as e:
         logging.error(f"Error initiating call: {e}")
         return HTMLResponse(
@@ -520,4 +520,4 @@ async def initiate_call(request: Request):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8080)
-    
+

@@ -11,16 +11,19 @@ A real-time voice translation system built with FastAPI, Twilio, and OpenAI that
 ### Core Components
 
 1. **Translation Session Management**
+
    - `TranslationSession` class manages call pairs and WebSocket connections
    - Tracks source and target call SIDs, phone numbers, and languages
    - Maintains WebSocket connections for both callers
 
 2. **WebSocket Endpoints**
-   - `/ws/source/{session_id}` - Handles source  caller websocket
-   - `/ws/target/{session_id}` - Handles target  callee websocket
+
+   - `/ws/source/{session_id}` - Handles source caller websocket
+   - `/ws/target/{session_id}` - Handles target callee websocket
    - Real-time bidirectional voice processing
 
 3. **Voice Webhooks**
+
    - `/voice/source/{session_id}` - Outbound call handler for source language speaker
    - `/voice/target/{session_id}` - Outbound call handler for target language speaker
 
@@ -48,11 +51,45 @@ Source Caller → WebSocket → Translation Engine → WebSocket → Target Call
 - **Error Handling**: Comprehensive error handling and logging
 - **Scalable Architecture**: FastAPI-based async architecture
 
-## Configuration
+### Supported Languages
 
-### Environment Variables
+ConversationRelay supports any language pair available in Twilio's Speech-to-Text (STT) and Text-to-Speech (TTS) services. The demo UI includes a selection of popular languages, though many more are supported:
 
-Create a `.env` file with the following variables:
+- `en-US` English US
+- `de-DE` German
+- `es-ES` Spanish
+- `fr-FR` French
+- `it-IT` Italian
+- `ro-RO` Romanian
+- `pt-PT` Portuguese
+- `el-GR` Greek
+- `ja-JP` Japanese
+- `zh-CN` Chinese Mandarin
+- `ar-SA` Arabic
+
+**Default Configuration:**
+
+- **Source Language**: Defaults to `en-US` (English)
+- **Target Language**: Defaults to `de-DE` (German)
+
+## Installation and Setup
+
+### 1. Install Dependencies:
+
+```bash
+uv sync
+```
+
+### 2. Configure Environment:
+
+Create a .env file from the sample:
+
+```bash
+cp .env.sample .env    # Linux/Mac
+copy .env.sample .env  # Windows
+```
+
+Then update the following variables with your actual values:
 
 ```env
 # Twilio Configuration
@@ -71,33 +108,30 @@ SOURCE_LANGUAGE=en-US
 TARGET_LANGUAGE=de-DE
 ```
 
-### Supported Languages
+### 3. Configure Twilio Webhook:
 
-- **Source Language**: Defaults to `en-US` (English)
-- **Target Language**: Defaults to `de-DE` (German)
-- Configurable via environment variables for any language pair
+Point your Twilio phone number webhook to `/voice`
 
+### 6. Run the Application:
 
-## Installation and Setup
+```bash
+uv run  main.py
+```
 
-1. **Install Dependencies**:
-   ```bash
-   uv sync
-   ```
+### 5. Run Ngrok:
 
-2. **Configure Environment**: Create `.env` file with required variables
+```bash
+ngrok http 8080
+```
 
-3. **Run the Application**:
-   ```bash
-   uv run  main.py
-   ```
+### 6. Open Your NGrok URL:
 
-4. **Configure Twilio Webhook**: Point your Twilio phone number webhook to `/voice`
-
+IMPORTANT: Open the public URL given by Ngrok. The demo will not function properly if you open http://localhost:8080
 
 ## Current Status
 
 **Phase 1**: ✅ Complete - Bidirectional real-time translation
+
 - Source-to-target translation
 - Target-to-source translation
 - Session management
@@ -111,8 +145,3 @@ TARGET_LANGUAGE=de-DE
 - **Recording and Transcription**: Call recording with translated transcripts
 - **Web Interface**: Browser-based translation interface
 - **Mobile App**: Native mobile application
-
-
-
-
-        
