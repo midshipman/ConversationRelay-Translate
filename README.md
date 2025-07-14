@@ -1,4 +1,4 @@
-# ConversationRelay Translate - Real-Time Voice Translation System
+# ConversationRelay Translate - Real-Time Voice Translation for Phone Calls
 
 A real-time voice translation system built with FastAPI, Twilio, and OpenAI that enables seamless bidirectional voice conversations between speakers of different languages.
 
