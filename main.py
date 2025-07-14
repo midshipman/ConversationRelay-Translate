@@ -2,7 +2,7 @@ import os
 import json
 import uvicorn
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import Response
 from openai import AsyncOpenAI
