@@ -8,7 +8,7 @@ from fastapi.responses import Response
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from twilio.rest import Client
-from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 import time
 from litellm import acompletion
 
