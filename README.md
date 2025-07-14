@@ -1,10 +1,10 @@
-# VoxRay Translate - Real-Time Voice Translation System
+# ConversationRelay Translate - Real-Time Voice Translation System
 
 A real-time voice translation system built with FastAPI, Twilio, and OpenAI that enables seamless bidirectional voice conversations between speakers of different languages.
 
 ## Overview
 
-**VoxRay Translate** is a sophisticated real-time translation system that bridges language barriers by providing instant voice-to-voice translation during phone calls. The system automatically creates translation sessions, manages WebSocket connections, and uses OpenAI's GPT-4 for high-quality translations.
+**ConversationRelay Translate** is a  real-time translation demo that bridges language barriers by providing instant voice-to-voice translation during phone calls. The system automatically creates translation sessions, manages WebSocket connections, and uses OpenAI's GPT-4 for high-quality translations.
 
 ## Architecture
 
