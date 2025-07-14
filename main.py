@@ -168,6 +168,37 @@ async def check_session_readiness_and_notify(session: TranslationSession, sessio
 
         return True
 
+async def cleanup_session(session_id: str):
+    
+    if session_id not in translation_sessions:
+        return
+    
+    session = translation_sessions[session_id]
+    end_message = {
+        "type": "end",
+        "handoffData": "clean up session"
+    }
+    
+    if session.source_websocket:
+        try:
+            await session.source_websocket.send_json(end_message)
+            await session.source_websocket.close()
+        except Exception as e:
+            logging.error(f"Error closing source WebSocket: {e}")
+        finally:
+            session.source_websocket = None
+    
+    if session.target_websocket:
+        try:
+            await session.target_websocket.send_json(end_message)
+            await session.target_websocket.close()
+        except Exception as e:
+            logging.error(f"Error closing target WebSocket: {e}")
+        finally:
+            session.target_websocket = None
+    
+    translation_sessions.pop(session_id, None)
+    logging.info(f"Translation session {session_id} removed")
 
 async def create_outbound_target_call(session_id: str, host: str, target_number: str, twilio_number: str):
     """Create outbound call to target language speaker"""
@@ -292,8 +323,7 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
     except Exception as e:
         logging.error(f"Source WebSocket error: {e}")
     finally:
-        if session_id in translation_sessions:
-            translation_sessions.pop(session_id, None)
+        await cleanup_session(session_id)
         logging.info("Source client disconnected.")
 
 @app.websocket("/ws/target/{session_id}")
@@ -364,6 +394,7 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
     except Exception as e:
         logging.error(f"Target WebSocket error: {e}")
     finally:
+        await cleanup_session(session_id)
         logging.info("Target client disconnected.")
 
 
