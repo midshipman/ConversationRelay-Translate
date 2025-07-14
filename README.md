@@ -82,21 +82,25 @@ TARGET_LANGUAGE=de-DE
 
 ## Installation and Setup
 
-1. **Install Dependencies**:
+### 1. Install Dependencies:
 
-   ```bash
-   uv sync
-   ```
+```bash
+uv sync
+```
 
-2. **Configure Environment**: Create `.env` file with required variables
+### 2. Configure Environment:
 
-3. **Run the Application**:
+Create `.env` file with required variables
 
-   ```bash
-   uv run  main.py
-   ```
+### 3. Run the Application:
 
-4. **Configure Twilio Webhook**: Point your Twilio phone number webhook to `/voice`
+```bash
+uv run  main.py
+```
+
+### 4. Configure Twilio Webhook:
+
+Point your Twilio phone number webhook to `/voice`
 
 ## Current Status
 
