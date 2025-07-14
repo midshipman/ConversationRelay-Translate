@@ -11,16 +11,19 @@ A real-time voice translation system built with FastAPI, Twilio, and OpenAI that
 ### Core Components
 
 1. **Translation Session Management**
+
    - `TranslationSession` class manages call pairs and WebSocket connections
    - Tracks source and target call SIDs, phone numbers, and languages
    - Maintains WebSocket connections for both callers
 
 2. **WebSocket Endpoints**
-   - `/ws/source/{session_id}` - Handles source  caller websocket
-   - `/ws/target/{session_id}` - Handles target  callee websocket
+
+   - `/ws/source/{session_id}` - Handles source caller websocket
+   - `/ws/target/{session_id}` - Handles target callee websocket
    - Real-time bidirectional voice processing
 
 3. **Voice Webhooks**
+
    - `/voice/source/{session_id}` - Outbound call handler for source language speaker
    - `/voice/target/{session_id}` - Outbound call handler for target language speaker
 
@@ -77,10 +80,10 @@ TARGET_LANGUAGE=de-DE
 - **Target Language**: Defaults to `de-DE` (German)
 - Configurable via environment variables for any language pair
 
-
 ## Installation and Setup
 
 1. **Install Dependencies**:
+
    ```bash
    uv sync
    ```
@@ -88,16 +91,17 @@ TARGET_LANGUAGE=de-DE
 2. **Configure Environment**: Create `.env` file with required variables
 
 3. **Run the Application**:
+
    ```bash
    uv run  main.py
    ```
 
 4. **Configure Twilio Webhook**: Point your Twilio phone number webhook to `/voice`
 
-
 ## Current Status
 
 **Phase 1**: ✅ Complete - Bidirectional real-time translation
+
 - Source-to-target translation
 - Target-to-source translation
 - Session management
@@ -111,8 +115,3 @@ TARGET_LANGUAGE=de-DE
 - **Recording and Transcription**: Call recording with translated transcripts
 - **Web Interface**: Browser-based translation interface
 - **Mobile App**: Native mobile application
-
-
-
-
-        
