@@ -53,9 +53,30 @@ Source Caller → WebSocket → Translation Engine → WebSocket → Target Call
 
 ## Configuration
 
-### Environment Variables
+### Supported Languages
 
-Create a `.env` file with the following variables:
+- **Source Language**: Defaults to `en-US` (English)
+- **Target Language**: Defaults to `de-DE` (German)
+- Configurable via environment variables for any language pair
+
+## Installation and Setup
+
+### 1. Install Dependencies:
+
+```bash
+uv sync
+```
+
+### 2. Configure Environment:
+
+Create a .env file from the sample:
+
+```bash
+cp .env.sample .env    # Linux/Mac
+copy .env.sample .env  # Windows
+```
+
+Then update the following variables with your actual values:
 
 ```env
 # Twilio Configuration
@@ -73,24 +94,6 @@ OPENAI_API_KEY=your_openai_api_key
 SOURCE_LANGUAGE=en-US
 TARGET_LANGUAGE=de-DE
 ```
-
-### Supported Languages
-
-- **Source Language**: Defaults to `en-US` (English)
-- **Target Language**: Defaults to `de-DE` (German)
-- Configurable via environment variables for any language pair
-
-## Installation and Setup
-
-### 1. Install Dependencies:
-
-```bash
-uv sync
-```
-
-### 2. Configure Environment:
-
-Create `.env` file with required variables
 
 ### 3. Run the Application:
 
