@@ -11,7 +11,6 @@ from twilio.rest import Client
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse
 import time
 from litellm import acompletion
-import litellm
 
 # Configure logging
 logging.basicConfig(
@@ -27,9 +26,6 @@ openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
 music_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/arcade-melody-295434.mp3"
 wait_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/mixkit-marimba-ringtone-1359.wav"
-
-litellm.success_callback = ["deepeval"]
-litellm.failure_callback = ["deepeval"]
 
 # Session management for translation pairs
 # Translation session management
