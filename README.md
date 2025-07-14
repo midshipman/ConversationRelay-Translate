@@ -133,11 +133,11 @@ IMPORTANT: Open the public URL given by Ngrok. The demo will not function proper
 - Session management
 - WebSocket handling
 - Environment-based configuration
-- **Multi-language Support**: Support for more than two languages per session
-- **Web Interface**: Browser-based translation interface
+- Web Interface: Browser-based translation interface
 
 ## Future Enhancements
 
 - **Conference Calls**: Multiple participants with different languages
 - **Recording and Transcription**: Call recording with translated transcripts
 - **Mobile App**: Native mobile application
+
