@@ -108,23 +108,19 @@ SOURCE_LANGUAGE=en-US
 TARGET_LANGUAGE=de-DE
 ```
 
-### 3. Configure Twilio Webhook:
-
-Point your Twilio phone number webhook to `/voice`
-
-### 6. Run the Application:
+### 3. Run the Application:
 
 ```bash
 uv run  main.py
 ```
 
-### 5. Run Ngrok:
+### 4. Run Ngrok:
 
 ```bash
 ngrok http 8080
 ```
 
-### 6. Open Your NGrok URL:
+### 5. Open Your NGrok URL:
 
 IMPORTANT: Open the public URL given by Ngrok. The demo will not function properly if you open http://localhost:8080
 
@@ -137,11 +133,11 @@ IMPORTANT: Open the public URL given by Ngrok. The demo will not function proper
 - Session management
 - WebSocket handling
 - Environment-based configuration
+- **Multi-language Support**: Support for more than two languages per session
+- **Web Interface**: Browser-based translation interface
 
 ## Future Enhancements
 
-- **Multi-language Support**: Support for more than two languages per session
 - **Conference Calls**: Multiple participants with different languages
 - **Recording and Transcription**: Call recording with translated transcripts
-- **Web Interface**: Browser-based translation interface
 - **Mobile App**: Native mobile application
