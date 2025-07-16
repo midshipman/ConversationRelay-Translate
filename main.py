@@ -28,10 +28,6 @@ twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_T
 music_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/ringtone-02-133354.mp3"
 wait_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/mixkit-marimba-ringtone-1359.wav"
 
-os.environ['CONFIDENT_API_KEY']=os.getenv("CONFIDENT_API_KEY")
-litellm.success_callback = ["deepeval"]
-litellm.failure_callback = ["deepeval"]
-
 # Session management for translation pairs
 # Translation session management
 class TranslationSession:
@@ -50,6 +46,7 @@ class TranslationSession:
         self.target_tts_provider = "ElevenLabs"  # Default target TTS provider
         self.target_voice = ""  # Default target voice
         self.host = None  # Request host for WebSocket URLs
+        self.play_waiting_music = True  # Flag to control waiting music
 
 # Session storage
 translation_sessions: Dict[str, TranslationSession] = {}
@@ -200,6 +197,17 @@ async def cleanup_session(session_id: str):
     translation_sessions.pop(session_id, None)
     logging.info(f"Translation session {session_id} removed")
 
+async def play_waiting_music(websocket: WebSocket):
+    """Play music while waiting for response"""
+    music_event = {
+        "type": "play",
+        "source": music_url,
+        "loop": 0,
+        "preemptible": True,
+        "interruptible": True
+    }
+    await websocket.send_json(music_event)
+
 async def create_outbound_target_call(session_id: str, host: str, target_number: str, twilio_number: str):
     """Create outbound call to target language speaker"""
     try:
@@ -301,15 +309,9 @@ async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
 
                     logging.info(f"Translated from {source_lang} to {target_lang}: {translated_text}")
 
-                    #play music while waiting for the response
-                    music_event = {
-                            "type": "play",
-                            "source": music_url,
-                            "loop": 0,
-                            "preemptible": True,
-                            "interruptible": True
-                        }
-                    await session.source_websocket.send_json(music_event)
+                    # Play music while waiting for the response (if enabled)
+                    if session.play_waiting_music:
+                        await play_waiting_music(session.source_websocket)
 
             if message["type"] == "info":
                 logging.info(f"Source info: {message}")
@@ -372,15 +374,9 @@ async def target_websocket_endpoint(websocket: WebSocket, session_id: str):
 
                     logging.info(f"Translated from {target_lang} to {source_lang}: {translated_text}")
 
-                    #play music while waiting for the response
-                    music_event = {
-                            "type": "play",
-                            "source": music_url,
-                            "loop": 0,
-                            "preemptible": True,
-                            "interruptible": True
-                        }
-                    await session.target_websocket.send_json(music_event)
+                    # Play music while waiting for the response
+                    if session.play_waiting_music:
+                        await play_waiting_music(session.target_websocket)
 
             if message["type"] == "info":
                 logging.info(f"Target info: {message}")
@@ -487,6 +483,7 @@ async def initiate_call(request: Request):
     source_voice = form_data.get("source_voice", "")
     target_tts_provider = form_data.get("target_tts_provider", "ElevenLabs")
     target_voice = form_data.get("target_voice", "")
+    play_waiting_music = form_data.get("play_waiting_music") == "on"  # Checkbox value
 
     # Validate required fields
     if not all([from_number, to_number, source_language, target_language]):
@@ -518,6 +515,7 @@ async def initiate_call(request: Request):
         session.target_tts_provider = target_tts_provider
         session.target_voice = target_voice
         session.host = request.headers.get('host')
+        session.play_waiting_music = play_waiting_music  # Set the flag
         translation_sessions[session_id] = session
 
         logging.info(f"Created manual translation session: {session_id}")
