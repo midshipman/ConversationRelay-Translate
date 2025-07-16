@@ -25,7 +25,7 @@ load_dotenv()
 app = FastAPI()
 openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
-music_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/arcade-melody-295434.mp3"
+music_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/ringtone-02-133354.mp3"
 wait_url = "https://pub-09065925c50a4711a49096e7dbee29ce.r2.dev/mixkit-marimba-ringtone-1359.wav"
 
 os.environ['CONFIDENT_API_KEY']=os.getenv("CONFIDENT_API_KEY")
