@@ -242,7 +242,7 @@ async def create_outbound_source_call(session_id: str, host: str, source_number:
         # Get existing session and update it
         if session_id not in translation_sessions:
             logging.error(f"Session {session_id} not found!")
-            return
+            return False
 
         session = translation_sessions[session_id]
 
@@ -260,9 +260,11 @@ async def create_outbound_source_call(session_id: str, host: str, source_number:
         # Update session with source call info
         session.source_call_sid = call.sid
         logging.info(f"Created outbound call to source number: {call.sid}")
-
+        return True
+    
     except Exception as e:
         logging.error(f"Error creating outbound source call: {e}")
+        return False
 
 @app.websocket("/ws/source/{session_id}")
 async def source_websocket_endpoint(websocket: WebSocket, session_id: str):
@@ -523,8 +525,8 @@ async def initiate_call(request: Request):
         logging.info(f"Source TTS: {source_tts_provider}/{source_voice}, Target TTS: {target_tts_provider}/{target_voice}")
 
         # Create outbound calls to both parties
-        await create_outbound_source_call(session_id, session.host, from_number, twilio_number)
-        await create_outbound_target_call(session_id, session.host, to_number, twilio_number)
+        if await create_outbound_source_call(session_id, session.host, from_number, twilio_number):
+            await create_outbound_target_call(session_id, session.host, to_number, twilio_number)
 
 
         return JSONResponse(
